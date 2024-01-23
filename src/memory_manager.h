@@ -7,6 +7,8 @@
 #define TESTING_VISIBLE private
 #endif
 
+// Copied from the original specification:
+//
 // Implement a virtual memory manager that takes a large contiguous block of memory and manages allocations
 // and deallocations on it.
 // The entire buffer needs to be available for allocation. You can use whatever extra memory you need to manage it.
@@ -92,7 +94,8 @@ class MemoryManager {
 
     void markAllUnoccupied(int start, int count);
 
-    // exists ONLY for testing
+    // These methods below exist ONLY for testing
+
     int getAvailableBytes() const { return _available_bytes; }
     int getNextByteLocation() const { return _next_byte_location; }
     std::vector<unsigned char> getAvailabilityBitset() const { return _availability_bitset; }

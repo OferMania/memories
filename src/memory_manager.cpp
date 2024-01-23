@@ -44,7 +44,7 @@ MemoryBlocks MemoryManager::Alloc(int size) {
             ++count;
         }
         if (current_count > 0) {
-            markAllOccupied(ii, current_count); // TODO: update _available_bytes and _availability_bitset
+            markAllOccupied(ii, current_count); // NOTE: This invocation updates _available_bytes and _availability_bitset
             allocations.push_back(std::pair(_buffer + ii, current_count));
         }
 
@@ -84,11 +84,11 @@ MemoryStatus MemoryManager::Free(const MemoryBlocks& blocks) {
             continue;
         }
 
-        markAllUnoccupied(ll, tuple.second);  // TODO: update _available_bytes and _availability_bitset
+        markAllUnoccupied(ll, tuple.second);  // NOTE: This invocation updates _available_bytes and _availability_bitset
     }
 
     // If we transition from being out of memory to having some, then point _next_byte_location to something valid for the next Alloc() call
-    if (out_of_memory && !found_bad_locations && !blocks.allocations.empty()) {
+    if (out_of_memory && _available_bytes > 0 && !found_bad_locations && !blocks.allocations.empty()) {
         int ll = static_cast<int>(blocks.allocations.front().first - _buffer);
         _next_byte_location = ll;
     }

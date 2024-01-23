@@ -63,7 +63,7 @@ Please ignore tclap and the associated tclap-1.4.0-rc1 subdirectory. tclap is a 
 
 src/main.cpp   ->  Where the "simple example" runs for now
 
-src/memory_manager.cpp   ->  The memory manager object, and associated status enums, and the memory-block struct object for discontinuous allocations
+src/memory_manager.cpp   ->  The memory manager object, and associated status enums, and the memory-blocks struct object for discontinuous allocations
 
 src/memory_manager_tests.cpp   ->  Tests the memory manager object in some more complex scenarios. I marked some methods visible to testing in order to ease verification of behaviors here.
 
@@ -73,7 +73,7 @@ src/main_tests.cpp  ->  This file is empty for now. If I had more time, I'd cons
 
 The following is a list of things I would attempt if I had more time to work on this project.
 
-- Adding a mutex attribute on the MemoryManager object and having all public methods lock with this mutex (luckily doesn't need to be a recursive mutex since the public methods don't call each other). This is a simple way to enforce multithread safety, though it limits access to the ENTIRE buffer to only 1 thread at a time. I'd sadly need to make this mutex mutable in order to use it in the Output() method, which is const.
+- Adding a mutex attribute on the MemoryManager object and having all public methods lock with this mutex (luckily doesn't need to be a recursive mutex since the public methods, excluding the TESTING_VISIBLE ones, don't call each other. And even in the case of TESTING_VISIBLE methods, we can work around this my making externally visible & internal methods, with externally visible ones locking & calling internal methods that in turn call each other). This is a simple way to enforce multithread safety, though it limits access to the ENTIRE buffer to only 1 thread at a time. I'd sadly need to make this mutex mutable in order to use it in the Output() method, which is const.
 
 - Saving the location and size of each continous region and therefore, for a call Malloc(n), using the smallest region I can find of size at least n, in order to attempt to minimize the number of allocations returned by the MemoryBlocks object.
 
@@ -91,6 +91,10 @@ The following is a list of things I would attempt if I had more time to work on 
 
 - Allowing MemoryManager to partition the buffers into multiple regions. This allows for multi-thread safety with improved concurrency over the single mutex attribute mentioned earlier. For this scenario, there's a different mutex object per region. Hence threads needing to Alloc() or Free() different regions aren't stuck waiting on each other.
 
+- Alternatively, assuming we are ok with Alloc()/Free() being invoked asynchronously, with work the caller threads can do while waiting for responses, we can do as follows: Designate one thread to work on MemoryManager & take in async message requests to alloc/free from a ring-buffer on behalf of other threads. This thread will fulfill those requests with response messages to the calling threads with results, and calling threads will check for replies and have callbacks defining behaviors to do once those async invocations complete. This paradigm avoids the need for mutex-locks (dpdk ring buffers come to mind here), and is easier to implement if we only need a few Alloc() or Free() invocations in a short time-window on MemoryManager per thread, or else the ring-buffer size becomes a problem (in either direction to/from calling thread). We can possibly workaround this constraint by having one async request for a thread correspond to multiple Alloc or Free requests.
+
 - Command-line args you can pass to MemoryManager to determine what size buffers (and what manangers) to make, and any specific Alloc/Free calls to make, instead of the current hard-coded behavior of one manager working on a buffer of size 5 and allocation 5 items, freeing 2 non-continuous ones, and allocating those 2 back.
 
-- Because I was the main maintainer/enhancer for RAMCloud at Stateless (ie distributed key-value storage tool), I am effectively required to say this one... Backing up memory buffers to a file or maybe making a MemoryManager over a file-buffer. Also, calling Alloc/Free of memory blocks over a network (instead of just locally on current machine), and synchronizing written blocks between machines on a network (including backup copies between machines, so you get fault tolerance).
+- Backing up memory buffers to a file or maybe even making a MemoryManager style object over a file-buffer for some scenarios.
+
+- This one inspired by my time as the main maintainer/enhancer for RAMCloud at Stateless (ie distributed key-value storage tool). Calling Alloc/Free of memory blocks over a network (instead of just locally on current machine), and synchronizing written blocks between machines on a network (including backup copies between machines, so you get fault tolerance). We can split which machines are assigned master or backup copies of which memory locations to give ourselves load-balancing, assuming the amount of memory to work over is too large for one machine.
