@@ -1,0 +1,1 @@
+/usr/bin/c++  -Wall -g -g CMakeFiles/MemoryManagerTests.dir/src/main_tests.cpp.o CMakeFiles/MemoryManagerTests.dir/src/memory_manager_tests.cpp.o CMakeFiles/MemoryManagerTests.dir/src/memory_manager.cpp.o -o MemoryManagerTests  lib/libgtest_main.a lib/libgtest.a 

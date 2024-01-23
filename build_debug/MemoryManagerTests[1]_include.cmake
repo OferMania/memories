@@ -1,0 +1,5 @@
+if(EXISTS "/home/ofer/workspace/memories/build_debug/MemoryManagerTests[1]_tests.cmake")
+  include("/home/ofer/workspace/memories/build_debug/MemoryManagerTests[1]_tests.cmake")
+else()
+  add_test(MemoryManagerTests_NOT_BUILT MemoryManagerTests_NOT_BUILT)
+endif()
