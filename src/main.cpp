@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     manager.Output();
 
     std::cout << "Alloc 5 blocks" << std::endl;
-    MemoryBlock block = manager.Alloc(5);
+    MemoryBlocks block = manager.Alloc(5);
     manager.Output();
 
     if (block.status != MemoryStatus::SUCCESS) {
@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 
     std::cout << "Free 2nd and 4th blocks" << std::endl;
     char* buffer_ptr = block.allocations.front().first;
-    MemoryBlock block2 = MemoryBlock(MemoryStatus::SUCCESS, {{buffer_ptr+1, 1}, {buffer_ptr+3, 1}});
+    MemoryBlocks block2 = MemoryBlocks(MemoryStatus::SUCCESS, {{buffer_ptr+1, 1}, {buffer_ptr+3, 1}});
     MemoryStatus status2 = manager.Free(block2);
     manager.Output();
 
@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "Alloc 2 blocks" << std::endl;
-    MemoryBlock block3 = manager.Alloc(2);
+    MemoryBlocks block3 = manager.Alloc(2);
     manager.Output();
 
     if (block3.status != MemoryStatus::SUCCESS) {

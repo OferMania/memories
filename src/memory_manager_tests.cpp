@@ -36,7 +36,7 @@ class MemoryManagerTest : public testing::Test {
     return result;
   }
 
-  int getBlockSum(const MemoryBlock& block) {
+  int getBlockSum(const MemoryBlocks& block) {
     int sum = 0;
     for (const auto& tuple : block.allocations) {
         if (tuple.second <= 0) {
@@ -115,7 +115,7 @@ TEST_F(MemoryManagerTest, unoccupiedRegionOnRight) {
 TEST_F(MemoryManagerTest, cannotAllocOutOfMemory) {
     _manager->markAllOccupied(0, 50);
 
-    MemoryBlock block = _manager->Alloc(10);
+    MemoryBlocks block = _manager->Alloc(10);
 
     EXPECT_EQ(block.status, MemoryStatus::OUT_OF_MEMORY);
     EXPECT_EQ(_manager->getAvailableBytes(), 0);
@@ -124,7 +124,7 @@ TEST_F(MemoryManagerTest, cannotAllocOutOfMemory) {
 TEST_F(MemoryManagerTest, cannotMeetAllocRequest) {
     _manager->markAllOccupied(10, 40);
 
-    MemoryBlock block = _manager->Alloc(11);
+    MemoryBlocks block = _manager->Alloc(11);
 
     EXPECT_EQ(block.status, MemoryStatus::INSUFFICIENT_MEMORY);
     EXPECT_EQ(_manager->getAvailableBytes(), 10);
@@ -134,7 +134,7 @@ TEST_F(MemoryManagerTest, allocContinuous) {
     _manager->markAllOccupied(10, 10);
     _manager->markAllOccupied(30, 10);
 
-    MemoryBlock block = _manager->Alloc(5);
+    MemoryBlocks block = _manager->Alloc(5);
 
     EXPECT_EQ(block.status, MemoryStatus::SUCCESS);
     EXPECT_EQ(block.allocations.size(), 1);
@@ -153,7 +153,7 @@ TEST_F(MemoryManagerTest, allocDiscontinuous) {
     _manager->markAllOccupied(10, 10);
     _manager->markAllOccupied(30, 10);
 
-    MemoryBlock block = _manager->Alloc(20);
+    MemoryBlocks block = _manager->Alloc(20);
 
     EXPECT_EQ(block.status, MemoryStatus::SUCCESS);
     EXPECT_EQ(block.allocations.size(), 2);
@@ -174,7 +174,7 @@ TEST_F(MemoryManagerTest, allocDiscontinuousWithWraparound) {
     _manager->markAllOccupied(30, 10);
     _manager->setNextByteLocation(25);
 
-    MemoryBlock block = _manager->Alloc(20);
+    MemoryBlocks block = _manager->Alloc(20);
 
     EXPECT_EQ(block.status, MemoryStatus::SUCCESS);
     EXPECT_EQ(block.allocations.size(), 3);
@@ -192,9 +192,9 @@ TEST_F(MemoryManagerTest, allocDiscontinuousWithWraparound) {
 }
 
 TEST_F(MemoryManagerTest, freeInvalidLocations) {
-    MemoryBlock block1 = MemoryBlock(MemoryStatus::SUCCESS, { { _buffer+50, 2 } });
-    MemoryBlock block2 = MemoryBlock(MemoryStatus::SUCCESS, { { _buffer-1, 1 } });
-    MemoryBlock block3 = MemoryBlock(MemoryStatus::SUCCESS, { { _buffer+40, 11 } });
+    MemoryBlocks block1 = MemoryBlocks(MemoryStatus::SUCCESS, { { _buffer+50, 2 } });
+    MemoryBlocks block2 = MemoryBlocks(MemoryStatus::SUCCESS, { { _buffer-1, 1 } });
+    MemoryBlocks block3 = MemoryBlocks(MemoryStatus::SUCCESS, { { _buffer+40, 11 } });
 
     MemoryStatus status1 = _manager->Free(block1);
     MemoryStatus status2 = _manager->Free(block2);
@@ -206,7 +206,7 @@ TEST_F(MemoryManagerTest, freeInvalidLocations) {
 }
 
 TEST_F(MemoryManagerTest, freeAlreadyFreeLocations) {
-    MemoryBlock block1 = MemoryBlock(MemoryStatus::SUCCESS, { { _buffer+0, 5 } });
+    MemoryBlocks block1 = MemoryBlocks(MemoryStatus::SUCCESS, { { _buffer+0, 5 } });
 
     MemoryStatus status1 = _manager->Free(block1);
 
@@ -219,7 +219,7 @@ TEST_F(MemoryManagerTest, freeAlreadyFreeLocations) {
 TEST_F(MemoryManagerTest, freeTheAlloc) {
     _manager->markAllOccupied(10, 10);
     _manager->markAllOccupied(30, 10);
-    MemoryBlock block = _manager->Alloc(5);
+    MemoryBlocks block = _manager->Alloc(5);
     EXPECT_EQ(block.status, MemoryStatus::SUCCESS);
 
     MemoryStatus status = _manager->Free(block);
@@ -237,7 +237,7 @@ TEST_F(MemoryManagerTest, freeDiscontinuous) {
     _manager->markAllOccupied(10, 10);
     _manager->markAllOccupied(30, 10);
 
-    MemoryBlock block = MemoryBlock(MemoryStatus::SUCCESS, { { _buffer+18, 14 }, { _buffer + 36, 2} });
+    MemoryBlocks block = MemoryBlocks(MemoryStatus::SUCCESS, { { _buffer+18, 14 }, { _buffer + 36, 2} });
     MemoryStatus status = _manager->Free(block);
 
     EXPECT_EQ(status, MemoryStatus::SUCCESS);
@@ -249,10 +249,10 @@ TEST_F(MemoryManagerTest, freeDiscontinuous) {
 }
 
 TEST_F(MemoryManagerTest, allocThenFreeSome) {
-    MemoryBlock block1 = _manager->Alloc(30);
+    MemoryBlocks block1 = _manager->Alloc(30);
     EXPECT_EQ(block1.status, MemoryStatus::SUCCESS);
 
-    MemoryBlock block2 = MemoryBlock(MemoryStatus::SUCCESS, { { _buffer+7, 5 }, { _buffer+19, 5} });
+    MemoryBlocks block2 = MemoryBlocks(MemoryStatus::SUCCESS, { { _buffer+7, 5 }, { _buffer+19, 5} });
     MemoryStatus status2 = _manager->Free(block2);
 
     EXPECT_EQ(status2, MemoryStatus::SUCCESS);
@@ -266,13 +266,13 @@ TEST_F(MemoryManagerTest, allocThenFreeSome) {
 }
 
 TEST_F(MemoryManagerTest, allocItAllThenGiveSomeBack) {
-    MemoryBlock block1 = _manager->Alloc(50);
+    MemoryBlocks block1 = _manager->Alloc(50);
     EXPECT_EQ(block1.status, MemoryStatus::SUCCESS);
 
-    MemoryBlock block2 = _manager->Alloc(1);
+    MemoryBlocks block2 = _manager->Alloc(1);
     EXPECT_EQ(block2.status, MemoryStatus::OUT_OF_MEMORY);
 
-    MemoryBlock block3 = MemoryBlock(MemoryStatus::SUCCESS, { { _buffer+10, 15 }, { _buffer+30, 5} });
+    MemoryBlocks block3 = MemoryBlocks(MemoryStatus::SUCCESS, { { _buffer+10, 15 }, { _buffer+30, 5} });
     MemoryStatus status3 = _manager->Free(block3);
 
     EXPECT_EQ(status3, MemoryStatus::SUCCESS);
@@ -287,14 +287,14 @@ TEST_F(MemoryManagerTest, allocItAllThenGiveSomeBack) {
 }
 
 TEST_F(MemoryManagerTest, allocAfterFreeDiscontinuous) {
-    MemoryBlock block1 = _manager->Alloc(50);
+    MemoryBlocks block1 = _manager->Alloc(50);
     EXPECT_EQ(block1.status, MemoryStatus::SUCCESS);
 
-    MemoryBlock block2 = MemoryBlock(MemoryStatus::SUCCESS, { { _buffer+10, 10 }, { _buffer+30, 10} });
+    MemoryBlocks block2 = MemoryBlocks(MemoryStatus::SUCCESS, { { _buffer+10, 10 }, { _buffer+30, 10} });
     MemoryStatus status2 = _manager->Free(block2);
     EXPECT_EQ(status2, MemoryStatus::SUCCESS);
 
-    MemoryBlock block3 = _manager->Alloc(15);
+    MemoryBlocks block3 = _manager->Alloc(15);
     EXPECT_EQ(block3.status, MemoryStatus::SUCCESS);
     EXPECT_EQ(block3.allocations.size(), 2);
     EXPECT_EQ(getBlockSum(block3), 15);
@@ -309,10 +309,10 @@ TEST_F(MemoryManagerTest, allocAfterFreeDiscontinuous) {
     EXPECT_EQ(_manager->getAvailableBytes(), 5);
     EXPECT_EQ(_manager->getNextByteLocation(), 35);
 
-    MemoryBlock block4 = _manager->Alloc(7);
+    MemoryBlocks block4 = _manager->Alloc(7);
     EXPECT_EQ(block4.status, MemoryStatus::INSUFFICIENT_MEMORY);
 
-    MemoryBlock block5 = _manager->Alloc(2);
+    MemoryBlocks block5 = _manager->Alloc(2);
     EXPECT_EQ(block5.status, MemoryStatus::SUCCESS);
     EXPECT_EQ(_manager->getAvailableBytes(), 3);
     EXPECT_EQ(_manager->getNextByteLocation(), 37);
@@ -322,11 +322,11 @@ TEST_F(MemoryManagerTest, allocAfterFreeSmallExample) {
     MemoryManager manager(_buffer, 5);
     EXPECT_EQ(manager.getAvailableBytes(), 5);
 
-    MemoryBlock block1 = manager.Alloc(5);
+    MemoryBlocks block1 = manager.Alloc(5);
     EXPECT_EQ(block1.status, MemoryStatus::SUCCESS);
     EXPECT_EQ(manager.getAvailableBytes(), 0);
 
-    MemoryBlock block2 = MemoryBlock(MemoryStatus::SUCCESS, { { _buffer+1, 1 }, { _buffer+3, 1} });
+    MemoryBlocks block2 = MemoryBlocks(MemoryStatus::SUCCESS, { { _buffer+1, 1 }, { _buffer+3, 1} });
     MemoryStatus status2 = manager.Free(block2);
     EXPECT_EQ(status2, MemoryStatus::SUCCESS);
 
@@ -334,7 +334,7 @@ TEST_F(MemoryManagerTest, allocAfterFreeSmallExample) {
     EXPECT_EQ(getOccupiedSpotsForCustomManager(manager), expectedOccupieds);
     EXPECT_EQ(manager.getAvailableBytes(), 2);
 
-    MemoryBlock block3 = manager.Alloc(2);
+    MemoryBlocks block3 = manager.Alloc(2);
     EXPECT_EQ(block3.status, MemoryStatus::SUCCESS);
     EXPECT_EQ(block3.allocations.size(), 2);
     EXPECT_EQ(getBlockSum(block3), 2);

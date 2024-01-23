@@ -1,0 +1,11 @@
+# Ignore build directories
+build/
+build-debug/
+build-release/
+obj/
+
+# Ignore backup files
+*.bak
+
+# Ignore vscode settings
+.vscode/

@@ -45,19 +45,22 @@ enum class MemoryStatus {
     INVALID_MEMORY_LOCATIONS,
 };
 
-struct MemoryBlock {
+struct MemoryBlocks {
+    // Indicates if our allocation attempt succeeded, or what went wrong
     MemoryStatus status;
+
+    // Each allocation contains a char* pointing to the allocated spot, and an int for how many continuous chars you get access to at this char* location
     std::vector<std::pair<char*, int>> allocations;
 
-    MemoryBlock()
+    MemoryBlocks()
     : status(MemoryStatus::UNKNOWN)
     , allocations() {}
 
-    MemoryBlock(MemoryStatus s)
+    MemoryBlocks(MemoryStatus s)
     : status(s)
     , allocations() {}
 
-    MemoryBlock(MemoryStatus s, const std::vector<std::pair<char*, int>>& a)
+    MemoryBlocks(MemoryStatus s, const std::vector<std::pair<char*, int>>& a)
     : status(s)
     , allocations(a) {}
 };
@@ -69,18 +72,20 @@ class MemoryManager {
     MemoryManager(char* buffer, int num_bytes);
 
     // Allocate memory of size 'size'. Use malloc() like semantics.
-    MemoryBlock Alloc(int size);
+    MemoryBlocks Alloc(int size);
 
     // Free up previously allocated memory.  Use free() like semantics.
-    MemoryStatus Free(const MemoryBlock& block);
+    MemoryStatus Free(const MemoryBlocks& blocks);
 
     void Output() const;
 
   TESTING_VISIBLE:
-    // return true if bit ii is a 0 (unused), false otherwise
+    // return true if bit ii is a 0 (unused), false otherwise. Putting this in comment, since it caused
+    // massive team confusion at a previous job of mine...
     bool isAvailable(int ii) const;
 
     // humor me, aa being true means mark bit ii as 1 (used), aa being false means mark bit ii as 0 (unused).
+    // my brain was going to melt if I did NOT write the comment about when to mark a bit as 1 or 0.
     void markOccupied(int ii, bool aa);
 
     void markAllOccupied(int start, int count);

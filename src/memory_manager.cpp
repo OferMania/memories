@@ -12,13 +12,13 @@ MemoryManager::MemoryManager(char* buffer, int num_bytes)
     _availability_bitset = std::vector<unsigned char>(num_chars, 0);
 }
 
-MemoryBlock MemoryManager::Alloc(int size) {
+MemoryBlocks MemoryManager::Alloc(int size) {
     if (_available_bytes == 0) {
-        return MemoryBlock(MemoryStatus::OUT_OF_MEMORY);
+        return MemoryBlocks(MemoryStatus::OUT_OF_MEMORY);
     }
 
     if (size > _available_bytes) {
-        return MemoryBlock(MemoryStatus::INSUFFICIENT_MEMORY);
+        return MemoryBlocks(MemoryStatus::INSUFFICIENT_MEMORY);
     }
 
     std::vector<std::pair<char*, int>> allocations;
@@ -66,13 +66,13 @@ MemoryBlock MemoryManager::Alloc(int size) {
         _next_byte_location = ii;
     }
 
-    return MemoryBlock(MemoryStatus::SUCCESS, allocations);
+    return MemoryBlocks(MemoryStatus::SUCCESS, allocations);
 }
 
-MemoryStatus MemoryManager::Free(const MemoryBlock& block) {
+MemoryStatus MemoryManager::Free(const MemoryBlocks& blocks) {
     bool out_of_memory = (_available_bytes == 0);
     bool found_bad_locations = false;
-    for (const auto& tuple : block.allocations) {
+    for (const auto& tuple : blocks.allocations) {
         int ll = static_cast<int>(tuple.first - _buffer);
         int rr = ll + tuple.second;
         if (ll < 0 || ll >= _num_bytes) {
@@ -88,8 +88,8 @@ MemoryStatus MemoryManager::Free(const MemoryBlock& block) {
     }
 
     // If we transition from being out of memory to having some, then point _next_byte_location to something valid for the next Alloc() call
-    if (out_of_memory && !found_bad_locations && !block.allocations.empty()) {
-        int ll = static_cast<int>(block.allocations.front().first - _buffer);
+    if (out_of_memory && !found_bad_locations && !blocks.allocations.empty()) {
+        int ll = static_cast<int>(blocks.allocations.front().first - _buffer);
         _next_byte_location = ll;
     }
 
