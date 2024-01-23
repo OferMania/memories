@@ -87,7 +87,9 @@ The following is a list of things I would attempt if I had more time to work on 
 
 - Templatifying the MemoryManager so we're not limited to managing buffers of type char. Ie `MemoryManager<T>` allows us to work on a buffer of type T.
 
-- Bound checking the markAllOccupied and markAllUnoccupied methods. I tried to bound-check whatever was reasonable given my time constraints in real life.
+- Bound checking start and count in the markAllOccupied and markAllUnoccupied methods. I tried to bound-check whatever was reasonable elsewhere given my time constraints in real life.
+
+- Working over characters in _availability_bitset in one shot, as opposed to bit by bit as done in the markOccupied() method. Similarly, incrementing or decrementing _available_bytes by some value n as opposed to doing so by one several times. There are tricks to do this correctly in a faster manner, but are easy to mess up & get wrong in coding. I was more worried about correctness of behavior than efficiency in my solution, so I chose not to do this.
 
 - Allowing MemoryManager to partition the buffers into multiple regions. This allows for multi-thread safety with improved concurrency over the single mutex attribute mentioned earlier. For this scenario, there's a different mutex object per region. Hence threads needing to Alloc() or Free() different regions aren't stuck waiting on each other.
 
